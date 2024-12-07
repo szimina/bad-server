@@ -32,8 +32,11 @@ app.use(errorHandler)
 // eslint-disable-next-line no-console
 
 const bootstrap = async () => {
+    console.log('пытаюсь подкдючиться')
+    console.log(DB_ADDRESS)
     try {
         await mongoose.connect(DB_ADDRESS)
+        
         await app.listen(PORT, () => console.log('ok'))
     } catch (error) {
         console.error(error)

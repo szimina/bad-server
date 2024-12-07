@@ -19,6 +19,8 @@ export default function LoginPage() {
     const { loginUser } = useActionCreators(userActions)
 
     const handleFormSubmit = (e: SyntheticEvent<HTMLFormElement>) => {
+        console.log('я тут')
+        console.log(values.password)
         e.preventDefault()
         loginUser(values)
             .unwrap()
