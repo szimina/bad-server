@@ -10,10 +10,13 @@ import errorHandler from './middlewares/error-handler'
 import serveStatic from './middlewares/serverStatic'
 import routes from './routes'
 
+
+
 const { PORT = 3000 } = process.env
 const app = express()
 
 app.use(cookieParser())
+
 
 app.use(cors())
 // app.use(cors({ origin: ORIGIN_ALLOW, credentials: true }));
@@ -30,7 +33,6 @@ app.use(errors())
 app.use(errorHandler)
 
 // eslint-disable-next-line no-console
-
 const bootstrap = async () => {
     try {
         await mongoose.connect(DB_ADDRESS)

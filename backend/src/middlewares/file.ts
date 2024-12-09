@@ -44,11 +44,12 @@ const fileFilter = (
     file: Express.Multer.File,
     cb: FileFilterCallback
 ) => {
-    if (!types.includes(file.mimetype)) {
+    if (!types.includes(file.mimetype) || file.buffer.byteLength <= 2048) {
         return cb(null, false)
     }
 
     return cb(null, true)
 }
+
 
 export default multer({ storage, fileFilter })
