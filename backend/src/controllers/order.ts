@@ -188,13 +188,18 @@ export const getOrdersCurrentUser = async (
             const searchRegex = new RegExp(search as string, 'i')
             const searchNumber = Number(search)
             const products = await Product.find({ title: searchRegex })
-            const productIds = products.map((product) => product._id)
+            const productIds = products.map((product:IProduct) => product._id)
+            console.log(typeof productIds[0])
+            
 
             orders = orders.filter((order) => {
+                console.log(order)
                 // eslint-disable-next-line max-len
-                const matchesProductTitle = order.products.some((product) =>
-                    productIds.some((id) => id.equals(product._id))
-                )
+                const matchesProductTitle = '' 
+                // Вернуться в этому месту!
+                // const matchesProductTitle = order.products.some((product) => 
+                //     productIds.some((id) => id.equals(product._id))
+                // )
                 // eslint-disable-next-line max-len
                 const matchesOrderNumber =
                     !Number.isNaN(searchNumber) &&
@@ -295,7 +300,7 @@ export const createOrder = async (
             req.body
 
         items.forEach((id: Types.ObjectId) => {
-            const product = products.find((p) => p._id.equals(id))
+            const product = products.find((p) => p.id.equals(id))
             if (!product) {
                 throw new BadRequestError(`Товар с id ${id} не найден`)
             }
