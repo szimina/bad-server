@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from 'express'
 import { FilterQuery, Error as MongooseError, Types } from 'mongoose'
+import sanitizeHtml from 'sanitize-html';
 import BadRequestError from '../errors/bad-request-error'
 import NotFoundError from '../errors/not-found-error'
 import Order, { IOrder } from '../models/order'
@@ -296,8 +297,16 @@ export const createOrder = async (
         const basket: IProduct[] = []
         const products = await Product.find<IProduct>({})
         const userId = res.locals.user._id
-        const { address, payment, phone, total, email, items, comment } =
+        let { address, payment, phone, total, email, items, comment } =
             req.body
+
+        address = sanitizeHtml(address)  
+        phone = sanitizeHtml(phone)
+        email = sanitizeHtml(email)
+        comment = sanitizeHtml (comment)
+        payment = sanitizeHtml(payment)
+        total = sanitizeHtml(total)
+        items = sanitizeHtml(items)
 
         items.forEach((id: Types.ObjectId) => {
             const product = products.find((p) => p.id.equals(id))
