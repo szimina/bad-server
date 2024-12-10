@@ -32,6 +32,7 @@ export const getOrders = async (
         if (Number(limit) > 10) {
             limit = 10
         }
+
         const filters: FilterQuery<Partial<IOrder>> = {}
 
         if (status) {
@@ -70,7 +71,6 @@ export const getOrders = async (
                 $lte: new Date(orderDateTo as string),
             }
         }
-
 
         const aggregatePipeline: any[] = [
             { $match: filters },
@@ -303,6 +303,7 @@ export const createOrder = async (
         const userId = res.locals.user._id
         const { address, payment, phone, total, email, items, comment } =
             req.body
+
         items.forEach((id: Types.ObjectId) => {
             const product = products.find((p) => p.id.equals(id))
             if (!product) {
