@@ -59,6 +59,7 @@ class Api {
                 ...this.options,
                 ...options,
             })
+            console.log(`${this.baseUrl}${endpoint}`)
             return await this.handleResponse<T>(res)
         } catch (error) {
             return Promise.reject(error)
