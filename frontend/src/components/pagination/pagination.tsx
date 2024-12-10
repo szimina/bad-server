@@ -19,6 +19,9 @@ const Pagination: React.FC<PaginationProps> = ({
     onNextPage,
     onPrevPage,
 }) => {
+    if (limit>10){
+        limit = 10
+    }
     return (
         <div className={styles.container}>
             <button

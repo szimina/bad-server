@@ -18,6 +18,8 @@ const app = express()
 const limiter = rateLimit({
     windowMs: 10 * 60 * 1000, // 10 минут
     max: 40, // Лимит для каждого IP на 40 запросов за 10 минут
+    standardHeaders: 'draft-7',
+	legacyHeaders: false,
     message: 'Слишком много запросов с данного IP, пожалуйста, попробуйте позднее'
 });
 // Применяем лимитер ко всем запросам
