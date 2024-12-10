@@ -1,6 +1,5 @@
 import { NextFunction, Request, Response } from 'express'
 import { FilterQuery, Error as MongooseError, Types } from 'mongoose'
-import sanitizeHtml from 'sanitize-html';
 import BadRequestError from '../errors/bad-request-error'
 import NotFoundError from '../errors/not-found-error'
 import Order, { IOrder } from '../models/order'
@@ -18,7 +17,6 @@ export const getOrders = async (
     try {
         const {
             page = 1,
-            limit = 10,
             sortField = 'createdAt',
             sortOrder = 'desc',
             status,
@@ -29,6 +27,11 @@ export const getOrders = async (
             search,
         } = req.query
 
+        let { limit = 10 } = req.query
+
+        if (Number(limit) > 10) {
+            limit = 10
+        }
         const filters: FilterQuery<Partial<IOrder>> = {}
 
         if (status) {
@@ -67,6 +70,7 @@ export const getOrders = async (
                 $lte: new Date(orderDateTo as string),
             }
         }
+
 
         const aggregatePipeline: any[] = [
             { $match: filters },
@@ -297,17 +301,8 @@ export const createOrder = async (
         const basket: IProduct[] = []
         const products = await Product.find<IProduct>({})
         const userId = res.locals.user._id
-        let { address, payment, phone, total, email, items, comment } =
+        const { address, payment, phone, total, email, items, comment } =
             req.body
-
-        address = sanitizeHtml(address)  
-        phone = sanitizeHtml(phone)
-        email = sanitizeHtml(email)
-        comment = sanitizeHtml (comment)
-        payment = sanitizeHtml(payment)
-        total = sanitizeHtml(total)
-        items = sanitizeHtml(items)
-
         items.forEach((id: Types.ObjectId) => {
             const product = products.find((p) => p.id.equals(id))
             if (!product) {
