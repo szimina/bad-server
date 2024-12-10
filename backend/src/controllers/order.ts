@@ -24,19 +24,22 @@ export const getOrders = async (
             orderDateFrom,
             orderDateTo,
             search,
+            status,
         } = req.query
 
-        let { limit = 10, status } = req.query
+
+        let { limit = 10  } = req.query
+
         if (Number(limit) > 10) {
             limit = 10
         }
-        status = status?.toString()
-
-
-
+        
         const filters: FilterQuery<Partial<IOrder>> = {}
 
         if (status) {
+            if (!/^[\w-\\.]+@([\w-]+\.)+[\w-]{2,4}$/.test(status.toString())) {
+                throw new Error('Invalid request param');
+              }
             if (typeof status === 'object') {
                 Object.assign(filters, status)
             }
