@@ -314,6 +314,10 @@ export const createOrder = async (
             return next(new BadRequestError('Неверная сумма заказа'))
         }
 
+        if (phone.length > 20) {
+            return next(new BadRequestError('Неверно указан телефон'))
+        }
+
         const newOrder = new Order({
             totalAmount: total,
             products: items,
