@@ -323,8 +323,8 @@ export const createOrder = async (
             return next(new BadRequestError('Неверная сумма заказа'))
         }
 
-        if (phone.length > 12) {
-            throw new Error('Invalid phone number')
+        if (/^(\+\d+)?(?:\s|-?|\(?\d+\)?)+$/.test(phone)) {
+            return next(new BadRequestError('Неверный телефон'))
         }
 
         const newOrder = new Order({
