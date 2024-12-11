@@ -72,6 +72,7 @@ export function currentUserAccessMiddleware<T>(
         }
 
         if (res.locals.user.roles.includes(Role.Admin)) {
+            console.log("Роль Админ")
             return next()
         }
 
