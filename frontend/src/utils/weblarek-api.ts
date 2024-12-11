@@ -1,5 +1,4 @@
 import { API_URL, CDN_URL } from '@constants'
-
 import {
     ICustomerPaginationResult,
     ICustomerResult,
@@ -37,8 +36,10 @@ class Api {
     constructor(baseUrl: string, options: RequestInit = {}) {
         this.baseUrl = baseUrl
         this.options = {
+            credentials: 'include',
             headers: {
                 ...((options.headers as object) ?? {}),
+                'CSRF-Token': getCookie('csrfToken') ?? ''
             },
         }
     }
@@ -59,7 +60,6 @@ class Api {
                 ...this.options,
                 ...options,
             })
-            console.log(`${this.baseUrl}${endpoint}`)
             return await this.handleResponse<T>(res)
         } catch (error) {
             return Promise.reject(error)

@@ -15,6 +15,7 @@ export const getCustomers = async (
     try {
         const {
             page = 1,
+            limit = 10,
             sortField = 'createdAt',
             sortOrder = 'desc',
             registrationDateFrom,
@@ -28,13 +29,9 @@ export const getCustomers = async (
             search,
         } = req.query
 
-        let { limit = 10  } = req.query
-
-        if (Number(limit) > 10) {
-            limit = 10
-        }
-
         const filters: FilterQuery<Partial<IUser>> = {}
+
+        const normalizedLimit = Math.min(Number(limit), 10).toString()
 
         if (registrationDateFrom) {
             filters.createdAt = {
@@ -121,8 +118,8 @@ export const getCustomers = async (
 
         const options = {
             sort,
-            skip: (Number(page) - 1) * Number(limit),
-            limit: Number(limit),
+            skip: (Number(page) - 1) * Number(normalizedLimit),
+            limit: Number(normalizedLimit),
         }
 
         const users = await User.find(filters, null, options).populate([
@@ -142,7 +139,7 @@ export const getCustomers = async (
         ])
 
         const totalUsers = await User.countDocuments(filters)
-        const totalPages = Math.ceil(totalUsers / Number(limit))
+        const totalPages = Math.ceil(totalUsers / Number(normalizedLimit))
 
         res.status(200).json({
             customers: users,
@@ -150,7 +147,7 @@ export const getCustomers = async (
                 totalUsers,
                 totalPages,
                 currentPage: Number(page),
-                pageSize: Number(limit),
+                pageSize: Number(normalizedLimit),
             },
         })
     } catch (error) {

@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from 'express'
 import { FilterQuery, Error as MongooseError, Types } from 'mongoose'
+import validator from 'validator'
 import BadRequestError from '../errors/bad-request-error'
 import NotFoundError from '../errors/not-found-error'
 import Order, { IOrder } from '../models/order'
@@ -17,29 +18,35 @@ export const getOrders = async (
     try {
         const {
             page = 1,
+            limit = 10,
             sortField = 'createdAt',
             sortOrder = 'desc',
+            status,
             totalAmountFrom,
             totalAmountTo,
             orderDateFrom,
             orderDateTo,
             search,
-            status,
         } = req.query
 
-
-        let { limit = 10  } = req.query
-
-        if (Number(limit) > 10) {
-            limit = 10
-        }
-        
+        const normalizedLimit = Math.min(Number(limit), 5).toString()
         const filters: FilterQuery<Partial<IOrder>> = {}
 
         if (status) {
-            if (!/^[\w-\\.]+@([\w-]+\.)+[\w-]{2,4}$/.test(status.toString())) {
-                throw new Error('Invalid request param');
-              }
+            if (typeof status === 'string' && /^[a-zA-Z0-9_-]+$/.test(status)) {
+                filters.status = status;
+            } else {
+                throw new BadRequestError('Передан невалидный параметр статуса');
+            }
+        }
+        
+        if (search) {
+            if (/[^\w\s]/.test(search as string)) {
+                throw new BadRequestError('Передан невалидный поисковый запрос');
+            }
+        }
+
+        if (status) {
             if (typeof status === 'object') {
                 Object.assign(filters, status)
             }
@@ -125,8 +132,8 @@ export const getOrders = async (
 
         aggregatePipeline.push(
             { $sort: sort },
-            { $skip: (Number(page) - 1) * Number(limit) },
-            { $limit: Number(limit) },
+            { $skip: (Number(page) - 1) * Number(normalizedLimit) },
+            { $limit: Number(normalizedLimit) },
             {
                 $group: {
                     _id: '$_id',
@@ -142,7 +149,7 @@ export const getOrders = async (
 
         const orders = await Order.aggregate(aggregatePipeline)
         const totalOrders = await Order.countDocuments(filters)
-        const totalPages = Math.ceil(totalOrders / Number(limit))
+        const totalPages = Math.ceil(totalOrders / Number(normalizedLimit))
 
         res.status(200).json({
             orders,
@@ -150,7 +157,7 @@ export const getOrders = async (
                 totalOrders,
                 totalPages,
                 currentPage: Number(page),
-                pageSize: Number(limit),
+                pageSize: Number(normalizedLimit),
             },
         })
     } catch (error) {
@@ -166,9 +173,10 @@ export const getOrdersCurrentUser = async (
     try {
         const userId = res.locals.user._id
         const { search, page = 1, limit = 5 } = req.query
+        const normalizedLimit = Math.min(Number(limit), 5)
         const options = {
             skip: (Number(page) - 1) * Number(limit),
-            limit: Number(limit),
+            limit: Number(normalizedLimit),
         }
 
         const user = await User.findById(userId)
@@ -197,18 +205,13 @@ export const getOrdersCurrentUser = async (
             const searchRegex = new RegExp(search as string, 'i')
             const searchNumber = Number(search)
             const products = await Product.find({ title: searchRegex })
-            const productIds = products.map((product:IProduct) => product._id)
-            console.log(typeof productIds[0])
-            
+            const productIds = products.map((product) => product._id)
 
             orders = orders.filter((order) => {
-                console.log(order)
                 // eslint-disable-next-line max-len
-                const matchesProductTitle = '' 
-                // Вернуться в этому месту!
-                // const matchesProductTitle = order.products.some((product) => 
-                //     productIds.some((id) => id.equals(product._id))
-                // )
+                const matchesProductTitle = order.products.some((product) =>
+                    productIds.some((id) => id.equals(product._id))
+                )
                 // eslint-disable-next-line max-len
                 const matchesOrderNumber =
                     !Number.isNaN(searchNumber) &&
@@ -219,7 +222,7 @@ export const getOrdersCurrentUser = async (
         }
 
         const totalOrders = orders.length
-        const totalPages = Math.ceil(totalOrders / Number(limit))
+        const totalPages = Math.ceil(totalOrders / Number(normalizedLimit))
 
         orders = orders.slice(options.skip, options.skip + options.limit)
 
@@ -229,7 +232,7 @@ export const getOrdersCurrentUser = async (
                 totalOrders,
                 totalPages,
                 currentPage: Number(page),
-                pageSize: Number(limit),
+                pageSize: Number(normalizedLimit),
             },
         })
     } catch (error) {
@@ -308,8 +311,12 @@ export const createOrder = async (
         const { address, payment, phone, total, email, items, comment } =
             req.body
 
+        if (phone && !validator.isMobilePhone(phone)) {
+            throw new BadRequestError('Не валидный номер телефона')
+        }
+
         items.forEach((id: Types.ObjectId) => {
-            const product = products.find((p) => p.id.equals(id))
+            const product = products.find((p) => p._id.equals(id))
             if (!product) {
                 throw new BadRequestError(`Товар с id ${id} не найден`)
             }
@@ -323,10 +330,6 @@ export const createOrder = async (
             return next(new BadRequestError('Неверная сумма заказа'))
         }
 
-        if (/^(\+\d+)?(?:\s|-?|\(?\d+\)?)+$/.test(phone)) {
-            return next(new BadRequestError('Неверный телефон'))
-        }
-
         const newOrder = new Order({
             totalAmount: total,
             products: items,
@@ -337,6 +340,7 @@ export const createOrder = async (
             customer: userId,
             deliveryAddress: address,
         })
+
         const populateOrder = await newOrder.populate(['customer', 'products'])
         await populateOrder.save()
 

@@ -22,7 +22,7 @@ const auth = async (req: Request, res: Response, next: NextFunction) => {
 
         const user = await UserModel.findOne(
             {
-                _id: new Types.ObjectId(payload.sub),
+                _id: new Types.ObjectId(payload._id),
             },
             { password: 0, salt: 0 }
         )
@@ -72,7 +72,6 @@ export function currentUserAccessMiddleware<T>(
         }
 
         if (res.locals.user.roles.includes(Role.Admin)) {
-            console.log("Роль Админ")
             return next()
         }
 
